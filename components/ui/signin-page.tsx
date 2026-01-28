@@ -33,7 +33,6 @@ const InputField = ({
       {label}
     </label>
     <div className="relative group">
-      {/* CORRECCIÓN: pointer-events-none para que el clic pase a través del icono */}
       <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
       <input
         id={id}
@@ -65,7 +64,6 @@ const PasswordField = ({
       {label}
     </label>
     <div className="relative group">
-      {/* CORRECCIÓN: pointer-events-none aquí también */}
       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
       <input
         id={id}
@@ -76,12 +74,11 @@ const PasswordField = ({
         className="w-full h-11 pl-10 pr-10 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-zinc-500 text-zinc-900 dark:text-white"
         required
       />
-      {/* El botón del ojo SÍ necesita pointer-events, pero asegúrate de no hacer clic en él para escribir */}
       <button
         type="button"
         onClick={onTogglePassword}
         className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer z-10"
-        tabIndex={-1} // Evita que el tabulador se detenga aquí antes del input
+        tabIndex={-1}
       >
         {showPassword ? (
           <EyeOff className="h-4 w-4" />
@@ -112,17 +109,34 @@ export default function SignIn() {
         password: formData.password,
       });
 
-      localStorage.setItem("user_email", formData.email);
-      if (res.data.token) localStorage.setItem("token", res.data.token);
+      // --- CORRECCIÓN CRÍTICA PARA EL LOGIN ---
+      const token = res.data.token;
 
-      console.log("Login exitoso:", res.data);
-      router.push("/chat");
+      if (!token) {
+        throw new Error("El servidor no envió el token de seguridad.");
+      }
+
+      // 1. Guardamos los datos explícitamente
+      localStorage.setItem("user_email", formData.email);
+      localStorage.setItem("token", token);
+
+      // 2. Verificamos que realmente se guardó antes de redirigir
+      if (localStorage.getItem("token")) {
+        console.log("Sesión guardada correctamente. Entrando...");
+
+        // 3. Pequeño delay para dar tiempo al navegador a procesar el storage
+        setTimeout(() => {
+          router.push("/chat");
+        }, 100);
+      } else {
+        throw new Error("Error al guardar la sesión en el navegador.");
+      }
     } catch (err: any) {
       console.error("Error login:", err);
-      // Mensaje de error más amigable si el servidor no responde
       const errorMsg =
         err.response?.data?.detail ||
-        "No se pudo conectar con el servidor. Verifica que Python esté corriendo.";
+        err.message || // Capturamos también los errores manuales que lanzamos arriba
+        "No se pudo conectar con el servidor.";
       setError(errorMsg);
     } finally {
       setLoading(false);
