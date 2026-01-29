@@ -10,11 +10,13 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  ArrowRight,
+  // Sparkles eliminado de aquí
 } from "lucide-react";
-import api from "@/lib/api"; // Tu conexión con Python
-import { useRouter } from "next/navigation"; // Para redirigir al usuario
+import api from "@/lib/api";
+import { useRouter } from "next/navigation";
 
-// --- COMPONENTES UI REUTILIZABLES ---
+// --- UI COMPONENTS: ESTILO GLASS / GEMINI (Igual que Login) ---
 
 const InputField = ({
   id,
@@ -29,32 +31,29 @@ const InputField = ({
   <div className="space-y-2">
     <label
       htmlFor={id}
-      className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+      className="text-sm font-medium text-zinc-400 ml-1 transition-colors group-focus-within:text-emerald-400"
     >
       {label}
     </label>
-    <div className="relative">
-      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+    <div className="relative group">
+      <Icon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-emerald-500 transition-colors pointer-events-none z-10" />
+
       <input
         id={id}
         type={type}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className={`w-full h-11 pl-10 pr-3 rounded-xl border bg-white dark:bg-zinc-900/50 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all
+        // ESTILO GLASS: h-14, rounded-2xl, bg-white/5
+        className={`w-full h-14 pl-12 pr-4 rounded-2xl border bg-white/5 text-white text-base placeholder:text-zinc-600 focus:outline-none focus:ring-4 transition-all duration-300
         ${
           error
-            ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
-            : "border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+            ? "border-red-500/50 focus:ring-red-500/10 focus:border-red-500"
+            : "border-white/5 focus:ring-emerald-500/10 focus:border-emerald-500/40"
         }`}
         required
       />
     </div>
-    {error && (
-      <p className="text-xs text-red-500 flex items-center gap-1">
-        <AlertCircle className="w-3 h-3" /> {error}
-      </p>
-    )}
   </div>
 );
 
@@ -69,69 +68,42 @@ const PasswordField = ({
   error,
 }: any) => (
   <div className="space-y-2">
-    <label
-      htmlFor={id}
-      className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-    >
+    <label htmlFor={id} className="text-sm font-medium text-zinc-400 ml-1">
       {label}
     </label>
-    <div className="relative">
-      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+    <div className="relative group">
+      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-emerald-500 transition-colors pointer-events-none z-10" />
+
       <input
         id={id}
         type={showPassword ? "text" : "password"}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className={`w-full h-11 pl-10 pr-10 rounded-xl border bg-white dark:bg-zinc-900/50 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all
+        className={`w-full h-14 pl-12 pr-12 rounded-2xl border bg-white/5 text-white text-base placeholder:text-zinc-600 focus:outline-none focus:ring-4 transition-all duration-300
         ${
           error
-            ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
-            : "border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+            ? "border-red-500/50 focus:ring-red-500/10 focus:border-red-500"
+            : "border-white/5 focus:ring-emerald-500/10 focus:border-emerald-500/40"
         }`}
         required
       />
+
       <button
         type="button"
         onClick={onTogglePassword}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer rounded-full hover:bg-white/10"
+        tabIndex={-1}
       >
         {showPassword ? (
-          <EyeOff className="h-4 w-4" />
+          <EyeOff className="h-5 w-5" />
         ) : (
-          <Eye className="h-4 w-4" />
+          <Eye className="h-5 w-5" />
         )}
       </button>
     </div>
   </div>
 );
-
-const Button = ({
-  children,
-  onClick,
-  className = "",
-  variant = "primary",
-  disabled,
-  loading,
-}: any) => {
-  const base =
-    "h-11 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 w-full disabled:opacity-70 disabled:cursor-not-allowed";
-  const variants = {
-    primary:
-      "bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/20",
-    outline:
-      "border border-zinc-200 dark:border-zinc-800 bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300",
-  };
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled || loading}
-      className={`${base} ${variants[variant as keyof typeof variants]} ${className}`}
-    >
-      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : children}
-    </button>
-  );
-};
 
 // --- PÁGINA PRINCIPAL DE REGISTRO ---
 
@@ -144,14 +116,13 @@ export default function SignUp() {
     confirmPassword: "",
   });
 
-  // Estados para la lógica
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
-    setError(""); // Limpiar error al escribir
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -159,7 +130,7 @@ export default function SignUp() {
     setLoading(true);
     setError("");
 
-    // 1. Validación Frontend
+    // Validaciones
     if (formData.password !== formData.confirmPassword) {
       setError("Las contraseñas no coinciden");
       setLoading(false);
@@ -173,18 +144,14 @@ export default function SignUp() {
     }
 
     try {
-      // 2. Conexión con Backend (Python)
-      const response = await api.post("/registro", {
+      await api.post("/registro", {
         email: formData.email,
         password: formData.password,
       });
 
-      console.log("Registro exitoso:", response.data);
       setSuccess(true);
-
-      // 3. Redirección después de 2 segundos a la HOME (Login)
       setTimeout(() => {
-        router.push("/");
+        router.push("/"); // Redirigir al Login
       }, 2000);
     } catch (err: any) {
       console.error("Error en registro:", err);
@@ -198,38 +165,43 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-white dark:bg-zinc-950">
+    <div className="min-h-screen flex w-full bg-zinc-950 text-white font-sans selection:bg-emerald-500/30 overflow-hidden">
       {/* LADO IZQUIERDO - FORMULARIO */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 mb-4">
-              <Leaf className="w-6 h-6" />
+      <div className="flex-1 flex items-center justify-center p-8 relative">
+        {/* Luz ambiental de fondo (Glow) */}
+        <div className="absolute pointer-events-none inset-0 flex items-center justify-center overflow-hidden">
+          <div className="w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] opacity-50" />
+        </div>
+
+        <div className="w-full max-w-sm space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-10">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center p-4 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl shadow-2xl shadow-emerald-900/10 mb-2 group">
+              <Leaf className="w-8 h-8 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Crea tu cuenta
+            <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-sm">
+              Crear cuenta
             </h1>
-            <p className="text-zinc-500 dark:text-zinc-400">
-              Comienza tu viaje hacia una vida saludable
+            <p className="text-zinc-400 text-base font-light">
+              Comienza tu transformación hoy
             </p>
           </div>
 
-          {/* MENSAJE DE ÉXITO */}
           {success ? (
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex flex-col items-center text-center animate-in fade-in zoom-in">
-              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
-                <CheckCircle className="w-6 h-6 text-emerald-600" />
+            /* MENSAJE DE ÉXITO ESTILO GLASS */
+            <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl flex flex-col items-center text-center animate-in fade-in zoom-in backdrop-blur-md">
+              <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 shadow-inner shadow-emerald-500/10">
+                <CheckCircle className="w-8 h-8 text-emerald-400" />
               </div>
-              <h3 className="font-semibold text-emerald-800 dark:text-emerald-300">
+              <h3 className="text-xl font-bold text-white mb-2">
                 ¡Cuenta creada!
               </h3>
-              <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                Redirigiendo al login...
+              <p className="text-zinc-400">
+                Redirigiendo al inicio de sesión...
               </p>
             </div>
           ) : (
             /* FORMULARIO */
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 mt-8">
               <InputField
                 id="email"
                 type="email"
@@ -243,11 +215,14 @@ export default function SignUp() {
               <PasswordField
                 id="password"
                 label="Contraseña"
-                placeholder="Crea una contraseña segura"
+                placeholder="Mínimo 6 caracteres"
                 value={formData.password}
                 onChange={handleChange}
                 showPassword={showPassword}
                 onTogglePassword={() => setShowPassword(!showPassword)}
+                error={
+                  error.includes("contraseña") || error.includes("caracteres")
+                }
               />
 
               <PasswordField
@@ -258,29 +233,41 @@ export default function SignUp() {
                 onChange={handleChange}
                 showPassword={showPassword}
                 onTogglePassword={() => setShowPassword(!showPassword)}
-                error={error}
+                error={error.includes("coinciden")}
               />
 
-              <div className="pt-2">
-                <Button type="submit" loading={loading}>
-                  {loading ? "Creando cuenta..." : "Registrarse"}
-                </Button>
-              </div>
+              {/* Error General */}
+              {error &&
+                !error.includes("contraseña") &&
+                !error.includes("coinciden") && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm flex items-start gap-3 animate-in zoom-in">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{error}</span>
+                  </div>
+                )}
 
-              {/* Error General del Backend */}
-              {error && !error.includes("contraseñas") && (
-                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" /> {error}
-                </div>
-              )}
+              {/* Botón Píldora */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full font-medium text-lg transition-all shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/40 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-4 border border-white/5"
+              >
+                {loading ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <>
+                    Registrarse <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
             </form>
           )}
 
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-sm text-zinc-500 mt-8">
             ¿Ya tienes una cuenta?{" "}
             <a
               href="/"
-              className="font-semibold text-emerald-600 hover:text-emerald-500 transition-colors"
+              className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors hover:underline underline-offset-4"
             >
               Inicia Sesión
             </a>
@@ -288,37 +275,38 @@ export default function SignUp() {
         </div>
       </div>
 
-      {/* LADO DERECHO - VISUAL */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden bg-zinc-900">
-        <div className="absolute inset-0 bg-gradient-to-bl from-zinc-900 via-emerald-950 to-zinc-900" />
+      {/* LADO DERECHO - VISUAL HERO (Igual que Login) */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden bg-zinc-900 border-l border-white/5">
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-[30s] hover:scale-105 ease-linear"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2070&auto=format&fit=crop')",
+          }}
+        ></div>
 
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute bottom-20 -right-10 w-80 h-80 bg-emerald-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-          <div className="absolute top-20 left-20 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-        </div>
+        {/* Overlay degradado */}
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/80 to-transparent"></div>
 
-        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center h-full w-full">
-          <div className="max-w-md space-y-8">
-            <div className="relative">
-              <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 rounded-full"></div>
-              <h2 className="relative text-4xl font-bold text-white tracking-tight leading-tight">
-                El primer paso hacia tu mejor versión.
-              </h2>
+        <div className="relative z-10 flex flex-col justify-end h-full p-16 pb-20 space-y-6 max-w-2xl">
+          {/* SE ELIMINÓ EL DIV DE SPARKLES AQUÍ */}
+
+          <h2 className="text-5xl font-bold text-white tracking-tight leading-tight drop-shadow-xl">
+            NutriApp <span className="text-emerald-500">IA</span>
+          </h2>
+          <div className="space-y-4 border-l-4 border-emerald-500 pl-6 bg-black/20 p-6 rounded-r-xl backdrop-blur-sm">
+            <div className="flex items-center gap-3 text-zinc-200 text-lg font-light">
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
+              Planes de dieta personalizados
             </div>
-
-            <div className="grid gap-4 text-left text-zinc-400 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
-                <span>Planes de dieta con IA</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
-                <span>Análisis nutricional instantáneo</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
-                <span>Seguimiento de progreso 24/7</span>
-              </div>
+            <div className="flex items-center gap-3 text-zinc-200 text-lg font-light">
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
+              Recetas generadas por IA
+            </div>
+            <div className="flex items-center gap-3 text-zinc-200 text-lg font-light">
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
+              Seguimiento 24/7
             </div>
           </div>
         </div>

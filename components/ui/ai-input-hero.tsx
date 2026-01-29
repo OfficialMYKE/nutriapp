@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Navbar } from "@/components/ui/mini-navbar";
-import { ArrowUp, Bot, Loader2, Sparkles } from "lucide-react";
+import { ArrowUp, Bot, Loader2 } from "lucide-react"; // Sparkles eliminado
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import ReactMarkdown from "react-markdown";
@@ -30,36 +30,61 @@ export function HeroWave() {
     e?.preventDefault();
     if (!prompt.trim() || loading) return;
 
-    // Limpieza de texto para evitar error 422
     const userText = prompt.replace(/[\r\n]+/g, " ").trim();
-
     setPrompt("");
     setLoading(true);
 
+    // 1. Mostrar mensaje del usuario
     setMessages((prev) => [...prev, { role: "user", content: userText }]);
 
     try {
       const userEmail =
         localStorage.getItem("user_email") || "invitado@nutriapp.com";
+
       const res = await api.post("/preguntar", {
         texto: userText,
         usuario_email: userEmail,
       });
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", content: res.data.respuesta },
-      ]);
+
+      // --- CORRECCIÓN DEL ERROR ---
+      // Si res.data.respuesta no existe, usamos un string vacío o un mensaje de error por defecto
+      // para evitar el crash de 'undefined'
+      const fullText =
+        res.data.respuesta ||
+        "Lo siento, no recibí una respuesta válida del servidor.";
+
+      setLoading(false);
+      setMessages((prev) => [...prev, { role: "ai", content: "" }]);
+
+      // Bucle de escritura suave
+      for (let i = 0; i < fullText.length; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 15)); // Velocidad de escritura
+
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          // Verificamos que existan mensajes antes de intentar actualizar
+          if (newMessages.length > 0) {
+            const lastMsg = newMessages[newMessages.length - 1];
+            newMessages[newMessages.length - 1] = {
+              ...lastMsg,
+              content: fullText.slice(0, i + 1),
+            };
+          }
+          return newMessages;
+        });
+      }
     } catch (error: any) {
       console.error("Error API:", error);
+      setLoading(false);
       let errorMsg = "Tuve un problema de conexión.";
 
       if (error.response?.status === 422) {
-        errorMsg = "Error de formato: Intenta no usar caracteres extraños.";
+        errorMsg = "Error de formato en el mensaje.";
+      } else if (error.response?.status === 500) {
+        errorMsg = "Error interno del servidor. Intenta más tarde.";
       }
 
       setMessages((prev) => [...prev, { role: "ai", content: errorMsg }]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -94,12 +119,10 @@ export function HeroWave() {
             : "justify-center items-center",
         )}
       >
-        {/* === TÍTULO HERO === */}
         {!isChatActive && (
           <div className="text-center mb-10 space-y-6 animate-in fade-in zoom-in duration-700">
-            <div className="inline-flex bg-emerald-500/10 p-3 rounded-full border border-emerald-500/20 backdrop-blur-md mb-2">
-              <Sparkles className="w-6 h-6 text-emerald-400" />
-            </div>
+            {/* SE ELIMINÓ EL DIV DE SPARKLES AQUÍ */}
+
             <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight drop-shadow-2xl">
               NutriApp <span className="text-emerald-500">IA</span>
             </h1>
@@ -109,11 +132,9 @@ export function HeroWave() {
           </div>
         )}
 
-        {/* === ÁREA DE CHAT CON SCROLL PERSONALIZADO === */}
         {isChatActive && (
           <div
-            className="flex-1 overflow-y-auto pr-4 space-y-4 mb-4 w-full
-            /* AQUÍ ESTÁN LAS CLASES NUEVAS DEL SCROLL: */
+            className="flex-1 overflow-y-auto pr-4 space-y-5 mb-4 w-full
             [&::-webkit-scrollbar]:w-2
             [&::-webkit-scrollbar-track]:bg-transparent
             [&::-webkit-scrollbar-thumb]:bg-white/10
@@ -125,21 +146,23 @@ export function HeroWave() {
               <div
                 key={idx}
                 className={cn(
-                  "flex gap-3 w-full max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2",
+                  "flex gap-3 w-full max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 items-start",
                   msg.role === "user" ? "justify-end" : "justify-start",
                 )}
               >
                 {msg.role === "ai" && (
-                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
                     <Bot className="w-4 h-4 text-white" />
                   </div>
                 )}
+
                 <div
                   className={cn(
-                    "p-4 rounded-xl text-sm md:text-base leading-relaxed shadow-sm backdrop-blur-md border max-w-[85%]",
+                    "px-5 py-3.5 text-sm md:text-base leading-relaxed shadow-sm backdrop-blur-md border max-w-[85%]",
+                    // ESTILO GEMINI REDONDEADO
                     msg.role === "user"
-                      ? "bg-emerald-600 text-white rounded-br-none border-emerald-500/50"
-                      : "bg-zinc-900/95 text-zinc-200 rounded-bl-none border-white/10",
+                      ? "bg-emerald-600 text-white rounded-3xl rounded-tr-sm border-emerald-500/50"
+                      : "bg-zinc-900/95 text-zinc-200 rounded-3xl rounded-tl-sm border-white/10",
                   )}
                 >
                   {msg.role === "ai" ? (
@@ -152,12 +175,13 @@ export function HeroWave() {
                 </div>
               </div>
             ))}
+
             {loading && (
-              <div className="flex gap-4 w-full max-w-4xl mx-auto justify-start animate-pulse">
-                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center">
+              <div className="flex gap-4 w-full max-w-4xl mx-auto justify-start animate-pulse items-start">
+                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center mt-1">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
-                <div className="bg-zinc-900/80 p-3 px-4 rounded-xl rounded-bl-none border border-white/10 flex items-center gap-2">
+                <div className="bg-zinc-900/80 p-3 px-5 rounded-3xl rounded-tl-sm border border-white/10 flex items-center gap-2">
                   <Loader2 className="w-3 h-3 text-emerald-500 animate-spin" />
                   <span className="text-zinc-400 text-sm">Pensando...</span>
                 </div>
@@ -167,7 +191,6 @@ export function HeroWave() {
           </div>
         )}
 
-        {/* === CAJA DE TEXTO (INPUT) === */}
         <div
           className={cn(
             "w-full transition-all duration-700 ease-in-out",
@@ -177,7 +200,7 @@ export function HeroWave() {
           <form
             onSubmit={handleSubmit}
             className={cn(
-              "relative flex items-end bg-black/40 backdrop-blur-xl border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden transition-all group",
+              "relative flex items-end bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden transition-all group",
               !isChatActive && "hover:bg-black/50",
             )}
           >
@@ -187,7 +210,6 @@ export function HeroWave() {
               onKeyDown={handleKeyDown}
               placeholder="Escribe tu consulta aquí..."
               className="w-full bg-transparent text-white text-base placeholder:text-zinc-500 py-5 pl-6 pr-14 resize-none outline-none min-h-[60px] max-h-[200px] leading-relaxed font-normal
-              /* Scroll del textarea también invisible/moderno */
               [&::-webkit-scrollbar]:w-1.5
               [&::-webkit-scrollbar-track]:bg-transparent
               [&::-webkit-scrollbar-thumb]:bg-white/10
@@ -199,7 +221,7 @@ export function HeroWave() {
               type="submit"
               disabled={!prompt.trim() || loading}
               className={cn(
-                "absolute bottom-3 right-3 p-2 rounded-xl transition-all duration-300 flex items-center justify-center border border-white/5",
+                "absolute bottom-3 right-3 p-2 rounded-full transition-all duration-300 flex items-center justify-center border border-white/5",
                 prompt.trim() && !loading
                   ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md"
                   : "bg-white/5 text-zinc-500 cursor-not-allowed",

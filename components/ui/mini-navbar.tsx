@@ -1,36 +1,86 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Leaf, Menu, X, LogOut, MessageSquare, User } from "lucide-react";
+import {
+  Leaf,
+  Menu,
+  X,
+  LogOut,
+  MessageSquare,
+  LayoutGrid,
+  ChefHat,
+  Info,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname(); // Para saber en qué página estamos
 
-  // 1. EFECTO: Comprobar si hay sesión activa al cargar
+  // ESTADOS PARA EL SCROLL
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const navLinks = [
+    { name: "Arquitectura", path: "/planes", icon: LayoutGrid },
+    { name: "Recetas", path: "/recetas", icon: ChefHat },
+    { name: "Nosotros", path: "/nosotros", icon: Info },
+  ];
+
+  // 1. EFECTO: Comprobar sesión
   useEffect(() => {
-    // Verificamos si existe el token en el navegador
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
-  }, [pathname]); // Se ejecuta cada vez que cambiamos de ruta
+  }, [pathname]);
 
-  // 2. FUNCIÓN: Cerrar Sesión
+  // 2. EFECTO: Lógica de Esconder/Mostrar Navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Si estamos en el tope absoluto (0px), siempre mostrar
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+        setLastScrollY(currentScrollY);
+        return;
+      }
+
+      // Si bajamos (current > last) -> Ocultar
+      // Si subimos (current < last) -> Mostrar
+      if (currentScrollY > lastScrollY) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user_email");
     setIsLoggedIn(false);
-    setIsOpen(false); // Cerrar menú móvil si está abierto
-    router.push("/"); // Redirigir al Login
+    setIsOpen(false);
+    router.push("/");
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 px-6 py-6 transition-all duration-300">
+    <header
+      // APLICAMOS LA CLASE PARA MOVER LA BARRA
+      className={`fixed top-0 left-0 w-full z-50 px-6 py-6 transition-transform duration-300 ease-in-out ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        {/* LOGO (Clickeable -> Va al inicio o al chat) */}
+        {/* LOGO */}
         <Link
           href={isLoggedIn ? "/chat" : "/"}
           className="flex items-center gap-2.5 group"
@@ -44,26 +94,41 @@ export function Navbar() {
         </Link>
 
         {/* MENÚ DE ESCRITORIO */}
-        <nav className="hidden md:flex items-center gap-8 bg-black/20 backdrop-blur-md px-8 py-2.5 rounded-full border border-white/5">
-          {["Planes", "Recetas", "Nosotros"].map((item) => (
-            <Link
-              key={item}
-              href="#"
-              className="text-sm font-medium text-zinc-300 hover:text-white transition-colors"
-            >
-              {item}
-            </Link>
-          ))}
+        <nav className="hidden md:flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1.5 rounded-full border border-white/5 shadow-xl">
+          {navLinks.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                className={`
+                  px-5 py-2 rounded-full text-sm font-medium transition-all duration-300
+                  ${
+                    isActive
+                      ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/20"
+                      : "text-zinc-400 hover:text-white hover:bg-white/5"
+                  }
+                `}
+              >
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* BOTONES INTELIGENTES (Cambian según el estado) */}
+        {/* BOTONES DE ACCIÓN */}
         <div className="hidden md:flex items-center gap-4">
           {isLoggedIn ? (
             <>
-              {/* Si está LOGUEADO mostramos esto: */}
               <Link href="/chat">
-                <button className="flex items-center gap-2 text-sm font-medium text-zinc-300 hover:text-white transition-colors">
-                  <MessageSquare className="w-4 h-4" /> Chat
+                <button
+                  className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                    pathname === "/chat"
+                      ? "text-emerald-400"
+                      : "text-zinc-300 hover:text-white"
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" /> Chat IA
                 </button>
               </Link>
 
@@ -76,7 +141,6 @@ export function Navbar() {
             </>
           ) : (
             <>
-              {/* Si NO está logueado mostramos esto: */}
               <Link href="/">
                 <button className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
                   Entrar
@@ -94,37 +158,53 @@ export function Navbar() {
         {/* MENÚ MÓVIL TOGGLE */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden text-white p-2"
+          className="md:hidden text-white p-2 bg-white/5 rounded-full backdrop-blur-sm border border-white/5"
         >
-          {isOpen ? <X /> : <Menu />}
+          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* DESPLEGABLE MÓVIL (También inteligente) */}
+      {/* DESPLEGABLE MÓVIL */}
       {isOpen && (
-        <div className="absolute top-20 left-4 right-4 bg-zinc-900/95 backdrop-blur-xl p-6 rounded-2xl border border-white/10 flex flex-col gap-4 md:hidden animate-in fade-in slide-in-from-top-5">
-          {["Planes", "Recetas", "Nosotros"].map((item) => (
-            <Link
-              key={item}
-              href="#"
-              className="text-zinc-300 text-lg py-2 border-b border-white/5"
-              onClick={() => setIsOpen(false)}
-            >
-              {item}
-            </Link>
-          ))}
+        <div className="absolute top-24 left-4 right-4 bg-zinc-950/90 backdrop-blur-2xl p-6 rounded-3xl border border-white/10 flex flex-col gap-2 md:hidden animate-in fade-in slide-in-from-top-5 shadow-2xl z-50">
+          <div className="flex flex-col gap-1 mb-4">
+            <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider ml-2 mb-1">
+              Navegación
+            </span>
+            {navLinks.map((item) => {
+              const isActive = pathname === item.path;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                    isActive
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : "text-zinc-300 hover:bg-white/5"
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="h-px bg-white/10 my-1" />
 
           <div className="flex flex-col gap-3 mt-2">
             {isLoggedIn ? (
               <>
                 <Link href="/chat" onClick={() => setIsOpen(false)}>
-                  <button className="w-full py-3 rounded-xl bg-emerald-600 text-white font-medium flex justify-center gap-2">
+                  <button className="w-full py-3 rounded-xl bg-emerald-600 text-white font-medium flex justify-center gap-2 shadow-lg shadow-emerald-900/20">
                     <MessageSquare className="w-5 h-5" /> Ir al Chat
                   </button>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full py-3 rounded-xl bg-red-500/20 text-red-200 border border-red-500/30 font-medium flex justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-red-500/10 text-red-200 border border-red-500/20 font-medium flex justify-center gap-2"
                 >
                   <LogOut className="w-5 h-5" /> Cerrar Sesión
                 </button>
@@ -132,7 +212,7 @@ export function Navbar() {
             ) : (
               <>
                 <Link href="/" onClick={() => setIsOpen(false)}>
-                  <button className="w-full py-3 rounded-xl bg-white/5 text-white">
+                  <button className="w-full py-3 rounded-xl bg-zinc-800/50 text-white border border-white/5">
                     Entrar
                   </button>
                 </Link>
