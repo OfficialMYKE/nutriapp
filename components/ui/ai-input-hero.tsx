@@ -51,6 +51,7 @@ export function HeroWave() {
       // para evitar el crash de 'undefined'
       const fullText =
         res.data.respuesta ||
+        res.data.error ||
         "Lo siento, no recibí una respuesta válida del servidor.";
 
       setLoading(false);
