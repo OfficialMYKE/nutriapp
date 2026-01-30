@@ -31,8 +31,10 @@ import {
   Label,
 } from "recharts";
 
-// --- ESTILOS CSS PARA LA SCROLLBAR (Inyectados en JS) ---
-const scrollbarStyles = `
+// --- ESTILOS GLOBALES INYECTADOS ---
+// 1. Scrollbar bonita
+// 2. Ocultar flechas de inputs numéricos (Chrome/Safari/Edge/Firefox)
+const globalStyles = `
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -48,27 +50,34 @@ const scrollbarStyles = `
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #52525b;
   }
+
+  /* Ocultar flechas en inputs numéricos */
+  input[type=number]::-webkit-inner-spin-button, 
+  input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+  }
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
 `;
 
-// --- COMPONENTE CUSTOM TOOLTIP (Para que se vea bien en la gráfica) ---
+// --- TOOLTIP PERSONALIZADO ---
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
-    // payload[0] es x (peso), payload[1] es y (calorías)
     return (
-      <div className="bg-zinc-950/90 border border-zinc-700 p-4 rounded-xl shadow-2xl backdrop-blur-md">
-        <p className="text-zinc-400 text-xs font-semibold mb-2 uppercase tracking-wider">
-          Datos Registrados
-        </p>
-        <div className="space-y-1">
-          <p className="text-sm text-white">
+      <div className="bg-zinc-950/95 border border-zinc-800 p-3 rounded-lg shadow-xl backdrop-blur-sm">
+        <p className="text-xs text-zinc-500 font-bold uppercase mb-1">Datos</p>
+        <div className="text-sm">
+          <p className="text-zinc-300">
             Peso:{" "}
-            <span className="font-bold text-emerald-400">
+            <span className="text-emerald-400 font-mono">
               {payload[0].value} kg
             </span>
           </p>
-          <p className="text-sm text-white">
+          <p className="text-zinc-300">
             Calorías:{" "}
-            <span className="font-bold text-emerald-400">
+            <span className="text-emerald-400 font-mono">
               {payload[1].value} kcal
             </span>
           </p>
@@ -238,16 +247,15 @@ export default function EstadisticasPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-emerald-500/30 relative overflow-hidden">
-      {/* Inyectamos estilos del scrollbar */}
+      {/* INYECTAMOS LOS ESTILOS GLOBALES AQUÍ */}
       <style jsx global>
-        {scrollbarStyles}
+        {globalStyles}
       </style>
 
       <Navbar />
       <div className="absolute top-0 left-0 w-full h-[500px] bg-emerald-500/10 blur-[150px] pointer-events-none" />
 
       <main className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto">
-        {/* HEADER */}
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Laboratorio de <span className="text-emerald-500">IA</span>
@@ -258,7 +266,6 @@ export default function EstadisticasPage() {
           </p>
         </div>
 
-        {/* MÉTRICAS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <MetricCard
             title="Estado del Sistema"
@@ -285,7 +292,6 @@ export default function EstadisticasPage() {
           />
         </div>
 
-        {/* GRID PRINCIPAL (TABLA + GRÁFICA) */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
           {/* TABLA INPUT */}
           <div className="bg-zinc-900/40 border border-white/10 rounded-3xl p-6 backdrop-blur-sm flex flex-col h-full">
@@ -309,7 +315,6 @@ export default function EstadisticasPage() {
               </div>
             </div>
 
-            {/* AQUI ESTA LA MAGIA DEL SCROLL: Agregamos la clase 'custom-scrollbar' */}
             <div className="overflow-x-auto mb-4 rounded-xl border border-white/5 flex-grow custom-scrollbar max-h-[300px]">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-zinc-900 z-10">
@@ -330,7 +335,7 @@ export default function EstadisticasPage() {
                           onChange={(e) =>
                             handleInputChange(row.id, "peso", e.target.value)
                           }
-                          className="w-full bg-transparent border border-zinc-700 focus:border-emerald-500 rounded px-2 py-1 text-sm text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-full bg-transparent border border-zinc-700 focus:border-emerald-500 rounded px-2 py-1 text-sm text-white outline-none placeholder:text-zinc-700"
                           placeholder="0"
                         />
                       </td>
@@ -342,7 +347,7 @@ export default function EstadisticasPage() {
                           onChange={(e) =>
                             handleInputChange(row.id, "altura", e.target.value)
                           }
-                          className="w-full bg-transparent border border-zinc-700 focus:border-emerald-500 rounded px-2 py-1 text-sm text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-full bg-transparent border border-zinc-700 focus:border-emerald-500 rounded px-2 py-1 text-sm text-white outline-none placeholder:text-zinc-700"
                           placeholder="0.00"
                         />
                       </td>
@@ -357,7 +362,7 @@ export default function EstadisticasPage() {
                               e.target.value,
                             )
                           }
-                          className="w-full bg-emerald-900/10 border border-emerald-500/20 focus:border-emerald-500 rounded px-2 py-1 text-sm text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-full bg-emerald-900/10 border border-emerald-500/20 focus:border-emerald-500 rounded px-2 py-1 text-sm text-white outline-none placeholder:text-zinc-700"
                           placeholder="0"
                         />
                       </td>
@@ -407,13 +412,15 @@ export default function EstadisticasPage() {
             )}
           </div>
 
-          {/* GRÁFICA */}
+          {/* GRÁFICA CORREGIDA */}
           <div className="bg-zinc-900/40 border border-white/10 rounded-3xl p-6 backdrop-blur-sm flex flex-col min-h-[400px]">
             <div className="mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-400" />{" "}
+              <TrendingUp className="w-5 h-5 text-blue-400" />
               <h2 className="text-xl font-bold text-white">Dispersión</h2>
             </div>
-            <div className="flex-grow w-full min-h-[300px]">
+
+            {/* AQUÍ ESTÁ EL ARREGLO PARA LA GRÁFICA: h-[350px] fijo en lugar de flex-grow */}
+            <div className="w-full h-[350px]">
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart
@@ -427,7 +434,17 @@ export default function EstadisticasPage() {
                       unit="kg"
                       stroke="#71717a"
                       tick={{ fill: "#71717a", fontSize: 12 }}
-                    />
+                      tickLine={false}
+                      axisLine={{ stroke: "#333" }}
+                    >
+                      <Label
+                        value="Peso (kg)"
+                        offset={0}
+                        position="insideBottom"
+                        fill="#52525b"
+                        style={{ fontSize: "10px" }}
+                      />
+                    </XAxis>
                     <YAxis
                       type="number"
                       dataKey="y"
@@ -435,9 +452,11 @@ export default function EstadisticasPage() {
                       unit="kcal"
                       stroke="#71717a"
                       tick={{ fill: "#71717a", fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={{ stroke: "#333" }}
                     />
 
-                    {/* TOOLTIP CORREGIDO: USAMOS CONTENT */}
+                    {/* TOOLTIP PERSONALIZADO */}
                     <Tooltip
                       content={<CustomTooltip />}
                       cursor={{ strokeDasharray: "3 3", stroke: "#52525b" }}
@@ -447,8 +466,9 @@ export default function EstadisticasPage() {
                   </ScatterChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-zinc-600">
-                  Sin datos
+                <div className="h-full flex flex-col items-center justify-center text-zinc-600">
+                  <Activity className="w-8 h-8 mb-2 opacity-50" />
+                  <p className="text-sm">Agrega datos para visualizar</p>
                 </div>
               )}
             </div>
@@ -483,7 +503,7 @@ export default function EstadisticasPage() {
                   onChange={(e) =>
                     setSimulacion({ ...simulacion, peso: e.target.value })
                   }
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500 outline-none transition-all"
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-700"
                 />
               </div>
               <div className="space-y-2 w-full">
@@ -498,7 +518,7 @@ export default function EstadisticasPage() {
                   onChange={(e) =>
                     setSimulacion({ ...simulacion, altura: e.target.value })
                   }
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500 outline-none transition-all"
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-700"
                 />
               </div>
               <button
