@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   ChefHat,
   Info,
+  BarChart3, // <--- IMPORTANTE: Icono nuevo importado
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -27,14 +28,18 @@ export function Navbar() {
 
   const navLinks = [
     { name: "Arquitectura", path: "/planes", icon: LayoutGrid },
+    { name: "Estadísticas ML", path: "/estadisticas", icon: BarChart3 }, // <--- NUEVO ENLACE
     { name: "Recetas", path: "/recetas", icon: ChefHat },
     { name: "Nosotros", path: "/nosotros", icon: Info },
   ];
 
   // 1. EFECTO: Comprobar sesión
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
+    // Verificamos window para evitar errores de hidratación en Next.js
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    }
   }, [pathname]);
 
   // 2. EFECTO: Lógica de Esconder/Mostrar Navbar
@@ -97,12 +102,13 @@ export function Navbar() {
         <nav className="hidden md:flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1.5 rounded-full border border-white/5 shadow-xl">
           {navLinks.map((item) => {
             const isActive = pathname === item.path;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.path}
                 href={item.path}
                 className={`
-                  px-5 py-2 rounded-full text-sm font-medium transition-all duration-300
+                  px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2
                   ${
                     isActive
                       ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/20"
@@ -110,6 +116,8 @@ export function Navbar() {
                   }
                 `}
               >
+                {/* Mostramos el icono solo si está activo para un toque elegante, o siempre si prefieres */}
+                {isActive && <Icon className="w-4 h-4" />}
                 {item.name}
               </Link>
             );
